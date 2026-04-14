@@ -194,6 +194,7 @@ classDiagram
 <p align="center">
   <img src="img/módulo YL - 69.jpg" height="200" alt="Sensor YL-69" />
   <img src="img/bomba 5v .png" height="200" alt="Bomba Sumergible 5V" />
+  <img src="img/motor.png" height="200" alt="Motor" />
   <img src="img/módulo YL - 69 conexion arduino.png" height="200" alt="Esquema Conexión YL-69 a Arduino" />
 </p>
 
@@ -237,6 +238,22 @@ graph TD
     class Pum water;
     class x1 empty;
 ```
+
+---
+
+## 🧪 Pruebas Manuales de Hardware (Monitor Serie)
+
+Si deseas probar que tu placa y tus componentes responden bien sin abrir la aplicación de C# WPF, puedes apoyarte del **Monitor Serie** incluido en el IDE de Arduino (configúralo a `9600 baudios`). 
+
+**¿Qué deberías ver?**
+1. **Lecturas del Sensor:** Al abrir el puerto, empezarás a ver números bajando en cascada y de forma constante en la pantalla. Esos son los valores de humedad.
+   - Si dejas el sensor en reposo **al aire libre**, el número leído debería estar **cerca de 1023**.
+   - Si tocas las dos patas del sensor con tu **mano húmeda** o lo sumerges parcialmente en agua, el número de resistencia **bajará rápidamente** (generalmente arrojando valores entre 200 y 400 dependiendo de tu agua).
+
+2. **Accionar la Bomba Manualmente:**
+   En la barra de envío (arriba de tu Monitor Serie), puedes escribir comandos para manipular el módulo del relevador a voluntad:
+   - Envía un **`1`** y presiona Enter ➔ El relevador hará "clic", dejando pasar la corriente y **se activará la bomba**.
+   - Envía un **`0`** y presiona Enter ➔ El relevador hará "clic" abriendo el circuito y **se apagará la bomba**.
 
 ---
 
