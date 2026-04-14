@@ -1,16 +1,24 @@
-flowchart LR
-    Operador([Operador])
-    Arduino([Arduino Hardware])
-    Bomba([Bomba de Agua])
+graph LR
+    %% Definición de Actores con formas distintas
+    Admin[Operador de Planta]
+    Sensor((Sensor de Nivel/ADC))
+    Actuador[[Bomba de Agua]]
 
-    subgraph WPF [Sistema WPF]
-        UC1[Monitorear Nivel de Tanque]
-        UC2[Configurar Umbral de Llenado]
-        UC3[Control Automático de Bomba]
+    subgraph "Sistema de Control (C# .NET)"
+        UC1(Visualizar Nivel en Tiempo Real)
+        UC2(Configurar Umbrales)
+        UC3(Recibir Datos Serial/ADC)
+        UC4(Procesar Lógica de Control)
+        UC5(Comando Activar/Desactivar)
+        
+        %% Relaciones internas
+        UC3 --> UC4
+        UC4 -.->|include| UC5
+        UC4 --- UC1
     end
 
-    Operador --> UC1
-    Operador --> UC2
-    Arduino -.-> |Envía nivel analógico| UC1
-    UC3 -.-> |Envía Comando 1/0| Arduino
-    Arduino -.-> |Enciende/Apaga| Bomba
+    %% Conexiones con Actores
+    Admin --- UC1
+    Admin --- UC2
+    Sensor --- UC3
+    UC5 --- Actuador

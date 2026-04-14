@@ -1,26 +1,22 @@
 sequenceDiagram
-    participant Arduino
-    participant SerialService as SerialSensorService
-    participant ViewModel as MainViewModel
-    participant View as MainWindow
+    participant S as Sensor (Hardware)
+    participant A as Arduino (Firmware)
+    participant C as App C# (WPF/MVVM)
+    participant L as SqlLogger (BD)
+    participant B as Bomba (Relevador)
 
     loop Cada 500ms
-        Arduino->>SerialService: Envía ADC vía Serial (ej. "450\n")
-        SerialService->>SerialService: DataReceived(ADC -> Porcentaje)
-        SerialService->>ViewModel: Dispara evento DataReceived(43.9)
-        ViewModel->>View: OnPropertyChanged("CurrentLevel")
-        ViewModel->>ViewModel: CheckPumpLogic()
-        
-        alt CurrentLevel < Threshold
-            ViewModel->>ViewModel: PumpStatus = "ENCENDIDA"
-            ViewModel->>SerialService: Enviar Comando ("1")
-            SerialService->>Arduino: Escribe '1' en Puerto Serial
-            Arduino->>Arduino: digitalWrite(RELAY_PIN, LOW)
-        else CurrentLevel >= Threshold
-            ViewModel->>ViewModel: PumpStatus = "Apagada"
-            ViewModel->>SerialService: Enviar Comando ("0")
-            SerialService->>Arduino: Escribe '0' en Puerto Serial
-            Arduino->>Arduino: digitalWrite(RELAY_PIN, HIGH)
+        S->>A: Señal Analógica (Voltaje)
+        A->>A: Conversión ADC (0-1023)
+        A->>C: Trama Serial "VAL:450\n"
+        C->>C: Validar Umbral (Lógica C#)
+        alt Valor < Umbral
+            C->>L: Guarda Evento (Encendido) en BD
+            C->>A: Comando "PUMP_ON" ('1')
+            A->>B: Cerrar Relevador (Activar)
+        else Valor >= Umbral
+            C->>A: Comando "PUMP_OFF" ('0')
+            A->>B: Abrir Relevador (Desactivar)
         end
-        ViewModel->>View: OnPropertyChanged("PumpStatus")
+        C->>C: Actualizar UI (Binding MVVM)
     end

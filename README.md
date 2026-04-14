@@ -1,68 +1,77 @@
-# pump-level-control-wpf
-Control Nivel GUI
+# Sistema de Monitoreo de Nivel y Control de Bomba con Arduino + C# WPF (MVVM)
 
-Proyecto que implementa un sistema para monitoreo de nivel y control de una bomba, separando la interfaz de usuario en WPF (Windows Presentation Foundation) bajo el patrón MVVM, y el mundo físico controlado mediante un Arduino conectado por puerto Serial.
+## Explicación General del Sistema
+Este proyecto es un **Producto Mínimo Viable (MVP)** diseñado para representar una solución industrial que automatiza el llenado y monitoreo de tanques (orientado al sector Gas LP e industrial). La solución se basa en una arquitectura de telemetría dividida en dos grandes capas operativas enfocadas en escalabilidad y robustez:
 
-## Diagramas del Sistema
+1. **El Hardware (Edge / Firmware):** Un microcontrolador Arduino lee datos instrumentales del mundo físico en tiempo real (vía un ADC conectado a un sensor) y procesa operaciones mecánicas accionando un relevador. Actúa como el dispositivo de medición en sitio (In-Situ) y envía la información telemétrica continuamente.
+2. **El Software (C# / WPF .NET):** Construida utilizando Windows Presentation Foundation bajo el patrón arquitectónico MVVM (Model-View-ViewModel). Funciona como el centro de monitoreo (HMI/Dashboard). Gracias al desacoplamiento, mantiene la lectura asíncrona del puerto serial fluida sin congelar la ventana del usuario. Cuenta con integración abstracta a bases de datos mediante SQL Server para formar una bitácora de eventos y auditoría de lecturas (Logging).
 
-En el directorio `docs/` se encuentran los diagramas de la arquitectura documentados como código, utilizando formato [Mermaid](https://mermaid.js.org/).
+---
 
-### 1. Diagrama de Casos de Uso
-*(Fuente: `docs/use-case.mmd`)*
+## Diagramas de Arquitectura (UML / Modelo 4+1)
+
+A continuación, se describen los modelos técnicos de la solución orientados a los estándares de desarrollo robusto.
+
+### 1. Diagrama de Casos de Uso (Vista de Escenarios)
+*Resume las funcionalidades del sistema desde la perspectiva de los usuarios externos e internos. Se ilustra a un "Operador de Planta" como el encargado humano de definir parámetros limite, mientras el "Sensor de Nivel" y la "Bomba" actúan como agentes de origen sistémico de los cuales recibimos e instruimos información.*
 
 ```mermaid
-flowchart LR
-    Operador([Operador])
-    Arduino([Arduino Hardware])
-    Bomba([Bomba de Agua])
+graph LR
+    %% Definición de Actores con formas distintas
+    Admin[Operador de Planta]
+    Sensor((Sensor de Nivel/ADC))
+    Actuador[[Bomba de Agua]]
 
-    subgraph WPF [Sistema WPF]
-        UC1[Monitorear Nivel de Tanque]
-        UC2[Configurar Umbral de Llenado]
-        UC3[Control Automático de Bomba]
+    subgraph "Sistema de Control (C# .NET)"
+        UC1(Visualizar Nivel en Tiempo Real)
+        UC2(Configurar Umbrales)
+        UC3(Recibir Datos Serial/ADC)
+        UC4(Procesar Lógica de Control)
+        UC5(Comando Activar/Desactivar)
+        
+        %% Relaciones internas
+        UC3 --> UC4
+        UC4 -.->|include| UC5
+        UC4 --- UC1
     end
 
-    Operador --> UC1
-    Operador --> UC2
-    Arduino -.-> |Envía nivel analógico| UC1
-    UC3 -.-> |Envía Comando 1/0| Arduino
-    Arduino -.-> |Enciende/Apaga| Bomba
+    %% Conexiones con Actores
+    Admin --- UC1
+    Admin --- UC2
+    Sensor --- UC3
+    UC5 --- Actuador
 ```
 
-### 2. Diagrama de Secuencia 
-*(Fuente: `docs/sequence.mmd`)*
+### 2. Diagrama de Secuencia (Vista Lógica)
+*Detalla el ciclo de vida de los datos a lo largo del tiempo. Cada iteración muestra cómo la lectura magnética/analógica del hardware es digitalizada mediante ADC, enviada a C# a través de serial, validada según el patrón MVVM y evaluada lógicamente. Dependiendo de los setpoints dictados por el usuario, emite tramas actuadoras y de forma asíncrona salva registros persistentes a bases de datos relacionales (Audit Trail).*
 
 ```mermaid
 sequenceDiagram
-    participant Arduino
-    participant SerialService as SerialSensorService
-    participant ViewModel as MainViewModel
-    participant View as MainWindow
+    participant S as Sensor (Hardware)
+    participant A as Arduino (Firmware)
+    participant C as App C# (WPF/MVVM)
+    participant L as SqlLogger (BD)
+    participant B as Bomba (Relevador)
 
     loop Cada 500ms
-        Arduino->>SerialService: Envía ADC vía Serial (ej. "450\n")
-        SerialService->>SerialService: DataReceived(ADC -> Porcentaje)
-        SerialService->>ViewModel: Dispara evento DataReceived(43.9)
-        ViewModel->>View: OnPropertyChanged("CurrentLevel")
-        ViewModel->>ViewModel: CheckPumpLogic()
-        
-        alt CurrentLevel < Threshold
-            ViewModel->>ViewModel: PumpStatus = "ENCENDIDA"
-            ViewModel->>SerialService: Enviar Comando ("1")
-            SerialService->>Arduino: Escribe '1' en Puerto Serial
-            Arduino->>Arduino: digitalWrite(RELAY_PIN, LOW)
-        else CurrentLevel >= Threshold
-            ViewModel->>ViewModel: PumpStatus = "Apagada"
-            ViewModel->>SerialService: Enviar Comando ("0")
-            SerialService->>Arduino: Escribe '0' en Puerto Serial
-            Arduino->>Arduino: digitalWrite(RELAY_PIN, HIGH)
+        S->>A: Señal Analógica (Voltaje)
+        A->>A: Conversión ADC (0-1023)
+        A->>C: Trama Serial "VAL:450\n"
+        C->>C: Validar Umbral (Lógica C#)
+        alt Valor < Umbral
+            C->>L: Guarda Evento (Encendido) en BD
+            C->>A: Comando "PUMP_ON" ('1')
+            A->>B: Cerrar Relevador (Activar)
+        else Valor >= Umbral
+            C->>A: Comando "PUMP_OFF" ('0')
+            A->>B: Abrir Relevador (Desactivar)
         end
-        ViewModel->>View: OnPropertyChanged("PumpStatus")
+        C->>C: Actualizar UI (Binding MVVM)
     end
 ```
 
 ### 3. Diagrama de Clases (Arquitectura MVVM)
-*(Fuente: `docs/class-diagram.mmd`)*
+*Representa la estructura estática orientada a objetos usando S.O.L.I.D. Destaca la abstracción `ISensorService` que blinda el ViewModel para que las pruebas unitarias y el recambio de periféricos sean agnósticos. Incluye ahora la inyección teórica del `SqlLoggerService` para propósitos de respaldo.*
 
 ```mermaid
 classDiagram
@@ -84,8 +93,14 @@ classDiagram
         +Dispose()
     }
 
+    class SqlLoggerService {
+        -string connectionString
+        +LogEvent(string type, string desc, double level)
+    }
+
     class MainViewModel {
         -ISensorService _sensorService
+        -SqlLoggerService _logger
         -double _currentLevel
         -double _threshold
         -string _pumpStatus
@@ -98,15 +113,24 @@ classDiagram
         #OnPropertyChanged(string)
     }
 
+    class TankData {
+        <<Model>>
+        +double CurrentLevel
+        +double TargetThreshold
+    }
+
     class MainWindow {
         <<View>>
         -MainViewModel _viewModel
     }
 
     SerialSensorService ..|> ISensorService : Implements
-    MainViewModel --> ISensorService : Uso (Inyección/Instanciación)
-    MainWindow --> MainViewModel : DataContext
+    MainViewModel --> ISensorService : Dependency Injection
+    MainViewModel --> SqlLoggerService : Bitácora (Logging)
+    MainWindow --> MainViewModel : DataContext (Binding)
 ```
+
+---
 
 ## Especificaciones de Hardware Actual (Sensor)
 

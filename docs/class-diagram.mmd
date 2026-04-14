@@ -17,8 +17,14 @@ classDiagram
         +Dispose()
     }
 
+    class SqlLoggerService {
+        -string connectionString
+        +LogEvent(string type, string desc, double level)
+    }
+
     class MainViewModel {
         -ISensorService _sensorService
+        -SqlLoggerService _logger
         -double _currentLevel
         -double _threshold
         -string _pumpStatus
@@ -33,7 +39,7 @@ classDiagram
 
     class TankData {
         <<Model>>
-        +double Level
+        +double CurrentLevel
         +double TargetThreshold
     }
 
@@ -43,5 +49,6 @@ classDiagram
     }
 
     SerialSensorService ..|> ISensorService : Implements
-    MainViewModel --> ISensorService : Uso (Inyección/Instanciación)
-    MainWindow --> MainViewModel : DataContext
+    MainViewModel --> ISensorService : Dependency Injection
+    MainViewModel --> SqlLoggerService : Bitácora (Logging)
+    MainWindow --> MainViewModel : DataContext (Binding)

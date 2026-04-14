@@ -21,8 +21,9 @@ namespace PumpControl.Views
             _serialService.Open();
             
             // Asigna el DataContext para enlazar los datos (Binding) al Frontend
-            this.DataContext = new MainViewModel(_serialService);
-
+            // Se inyectan ambos servicios (Hardware Sensor y Base de Datos SQL)
+            var loggerService = new SqlLoggerService();
+            this.DataContext = new MainViewModel(_serialService, loggerService);
             // Asegurarse de liberar recursos del puerto al cerrar la misma ventana
             this.Closing += MainWindow_Closing;
         }
