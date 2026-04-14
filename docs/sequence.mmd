@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant Arduino
+    participant SerialService as SerialSensorService
+    participant ViewModel as MainViewModel
+    participant View as MainWindow
+
+    loop Cada 500ms
+        Arduino->>SerialService: Envía ADC vía Serial (ej. "450\n")
+        SerialService->>SerialService: DataReceived(ADC -> Porcentaje)
+        SerialService->>ViewModel: Dispara evento DataReceived(43.9)
+        ViewModel->>View: OnPropertyChanged("CurrentLevel")
+        ViewModel->>ViewModel: CheckPumpLogic()
+        
+        alt CurrentLevel < Threshold
+            ViewModel->>ViewModel: PumpStatus = "ENCENDIDA"
+            ViewModel->>SerialService: Enviar Comando ("1")
+            SerialService->>Arduino: Escribe '1' en Puerto Serial
+            Arduino->>Arduino: digitalWrite(RELAY_PIN, LOW)
+        else CurrentLevel >= Threshold
+            ViewModel->>ViewModel: PumpStatus = "Apagada"
+            ViewModel->>SerialService: Enviar Comando ("0")
+            SerialService->>Arduino: Escribe '0' en Puerto Serial
+            Arduino->>Arduino: digitalWrite(RELAY_PIN, HIGH)
+        end
+        ViewModel->>View: OnPropertyChanged("PumpStatus")
+    end

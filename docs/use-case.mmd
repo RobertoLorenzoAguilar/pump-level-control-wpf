@@ -1,0 +1,16 @@
+flowchart LR
+    Operador([Operador])
+    Arduino([Arduino Hardware])
+    Bomba([Bomba de Agua])
+
+    subgraph WPF [Sistema WPF]
+        UC1[Monitorear Nivel de Tanque]
+        UC2[Configurar Umbral de Llenado]
+        UC3[Control Automático de Bomba]
+    end
+
+    Operador --> UC1
+    Operador --> UC2
+    Arduino -.-> |Envía nivel analógico| UC1
+    UC3 -.-> |Envía Comando 1/0| Arduino
+    Arduino -.-> |Enciende/Apaga| Bomba

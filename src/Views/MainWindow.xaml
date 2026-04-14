@@ -1,0 +1,41 @@
+<Window x:Class="PumpControl.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Castelec - Control de Llenado" Height="450" Width="400"
+        Background="#F0F0F0">
+    
+    <Grid Margin="20">
+        <StackPanel Spacing="15">
+            
+            <TextBlock Text="MONITOREO DE NIVEL GAS LP" 
+                       FontSize="20" FontWeight="Bold" Foreground="#2C3E50"
+                       HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+            <Grid Height="200" Width="100">
+                <ProgressBar Orientation="Vertical" 
+                             Value="{Binding CurrentLevel}" 
+                             Minimum="0" Maximum="100"
+                             Foreground="{Binding CurrentLevel, Converter={StaticResource LevelToColorConverter}}"/>
+                
+                <TextBlock Text="{Binding CurrentLevel, StringFormat={}{0:F1}%}" 
+                           VerticalAlignment="Center" HorizontalAlignment="Center"
+                           FontWeight="Bold" FontSize="16"/>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                <TextBlock Text="Umbral de Activación: " VerticalAlignment="Center"/>
+                <Slider Width="150" Minimum="0" Maximum="100" 
+                        Value="{Binding Threshold, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="{Binding Threshold, StringFormat={}{0:F0}%}" 
+                           FontWeight="Bold" Margin="5,0,0,0"/>
+            </StackPanel>
+
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5"
+                    Background="{Binding PumpStatus, Converter={StaticResource StatusToColorConverter}}">
+                <TextBlock Text="{Binding PumpStatus}" 
+                           HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
+            </Border>
+
+        </StackPanel>
+    </Grid>
+</Window>

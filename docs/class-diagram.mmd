@@ -1,0 +1,47 @@
+classDiagram
+    class ISensorService {
+        <<interface>>
+        +event EventHandler~double~ DataReceived
+        +GetCurrentLevel() double
+    }
+
+    class SerialSensorService {
+        -SerialPort _serialPort
+        -string _portName
+        -int _baudRate
+        +SerialSensorService(string, int)
+        -SetupSerialPort()
+        +Open()
+        -SerialPort_DataReceived(object, SerialDataReceivedEventArgs)
+        +Close()
+        +Dispose()
+    }
+
+    class MainViewModel {
+        -ISensorService _sensorService
+        -double _currentLevel
+        -double _threshold
+        -string _pumpStatus
+        +double CurrentLevel
+        +double Threshold
+        +string PumpStatus
+        +MainViewModel(ISensorService)
+        -CheckPumpLogic()
+        +event PropertyChangedEventHandler PropertyChanged
+        #OnPropertyChanged(string)
+    }
+
+    class TankData {
+        <<Model>>
+        +double Level
+        +double TargetThreshold
+    }
+
+    class MainWindow {
+        <<View>>
+        -MainViewModel _viewModel
+    }
+
+    SerialSensorService ..|> ISensorService : Implements
+    MainViewModel --> ISensorService : Uso (Inyección/Instanciación)
+    MainWindow --> MainViewModel : DataContext
