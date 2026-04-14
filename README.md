@@ -1,19 +1,62 @@
-# Sistema de Monitoreo de Nivel y Control de Bomba con Arduino + C# WPF (MVVM)
+# Sistema de Monitoreo de Nivel y Control de Bomba (Telemetría de Hardware UI)
 
-## Explicación General del Sistema
-Este proyecto es un **Producto Mínimo Viable (MVP)** diseñado para representar una solución industrial que automatiza el llenado y monitoreo de tanques (orientado al sector Gas LP e industrial). La solución se basa en una arquitectura de telemetría dividida en dos grandes capas operativas enfocadas en escalabilidad y robustez:
+## 📖 Introducción y Guía de Despliegue (Getting Started)
+Si acabas de descargar o clonar este proyecto por primera vez y no sabes por dónde comenzar, sigue esta sencilla guía paso a paso para ejecutarlo en tu computadora:
 
-1. **El Hardware (Edge / Firmware):** Un microcontrolador Arduino lee datos instrumentales del mundo físico en tiempo real (vía un ADC conectado a un sensor) y procesa operaciones mecánicas accionando un relevador. Actúa como el dispositivo de medición en sitio (In-Situ) y envía la información telemétrica continuamente.
-2. **El Software (C# / WPF .NET):** Construida utilizando Windows Presentation Foundation bajo el patrón arquitectónico MVVM (Model-View-ViewModel). Funciona como el centro de monitoreo (HMI/Dashboard). Gracias al desacoplamiento, mantiene la lectura asíncrona del puerto serial fluida sin congelar la ventana del usuario. Cuenta con integración abstracta a bases de datos mediante SQL Server para formar una bitácora de eventos y auditoría de lecturas (Logging).
+1. **Requisitos Previos:**
+   - Cuentas con [Visual Studio 2022](https://visualstudio.microsoft.com/es/) instalando la carga de trabajo de *"Desarrollo de escritorio de .NET"* (WPF / WinForms).
+   - Necesitas la paquetería SDK de **.NET 8** (Generalmente preincluida en VS2022).
+
+2. **Cómo Lanzar la Aplicación:**
+   - Abre la carpeta del código fuente de este proyecto en tu Explorador de Windows.
+   - Encuentra el archivo **`PumpControl.sln`** y haz doble clic sobre él.
+   - En Visual Studio, dale clic al botón superior central verde que dice **▶️ Iniciar** (o presiona tu botón `F5`).
+   - El sistema enlazará paquetes NuGet (Como ADO.NET SQL) detrás de escena, construirá el EXE y lanzará tu panel de instrumentos MVVM al frente.
 
 ---
 
-## Diagramas de Arquitectura (UML / Modelo 4+1)
+## 🛠️ Comportamiento del Sistema y Tolerancia a Fallos
+Como este software es de instrumentación, se cuidó una arquitectura de *Manejo Asentado de Excepciones*. Es decir, el software está consciente de que no siempre tendrás todos los aparatos del ecosistema conectados a tu laptop mientras desarrollas (o vas de viaje), pero NUNCA se asustará (crasheará) cerrándose súbitamente en la cara del operador. 
 
-A continuación, se describen los modelos técnicos de la solución orientados a los estándares de desarrollo robusto.
+Analicemos cómo funciona iterando en 4 de sus posibles escenarios:
+
+1. **Ejecución de "Solo Software" (Zero Hardware)**: 
+   - *Entorno:* Lanzaste WPF. Pero el cable del Arduino está lejos, y no compilaste localmente base de datos instalada.
+   - *Comportamiento:* ¡WPF funcionará suavemente! Tu gráfica se quedará pausada al 0%. Ya que al fallar buscando puertos `COM3` o sentencias SQL, estos subsistemas generarán alarmas `catch` puramente silenciosas hacia la consola interna para que tú sepas el fallo pasivamente sin mermar la estabilidad interactiva de Windows.
+
+2. **Ejecución con Arduino Solamente**:
+   - *Entorno:* Enchufaste tu Arduino leyendo datos por Serial, pero omitiste configurar o instalar el pesado servidor SQL Server.
+   - *Comportamiento:* Podrás subir, brincar y observar reaccionar tus gráficas `ProgressBar` de humedad o nivel al instante. Al batir tus tolerancias, lanzarás con éxito directivas mecánicas hacia tus Relevadores (Actuadores). Los intentos paralelos de documentar el suceso al motor de bases de datos simplemente fallan a puerta cerrada. ¡La máquina responde bien al terreno a pesar de ser huérfana de logs temporales!
+   
+3. **Ejecución con Base de Datos Solamente**:
+   - *Entorno:* Corriste tu archivo `schema.sql` configurando una base activa pero desanclaste la placa sensorial Arduino.
+   - *Comportamiento:* Las métricas permanecerán paralíticas. Al no existir tramas magnéticas alimentando el bucle desde afuera, las condicionales estáticas no estallarán ningún ciclo. El sistema jamás emitirá registros ilusorios (`INSERT`) manteniéndonos blindados ante datos polinizados por la nada misma.
+
+4. **Producción Operativa Completa (Hard + Soft + SQL)**:
+   - *Comportamiento:* Recolección viva. C# levanta y mapea cifras crudas digitales al Front, manipula órdenes relés-digitales encendiendo las válvulas in-situ para restaurar la normalidad frente a fugas y deja evidencia rastreable histórica usando conectores nativos y a prueba de intrusión (Injection-proof) a las tripas del almacenamiento masivo local.
+
+---
+
+## 🗂️ Arquitectura de Componentes (El Árbol de Directorios)
+No se aplicó un simple *"Pon todas las reglas regadas adentro de Visual Basic"*. Para blindar la escalabilidad si crece el sistema de flotilla a decenas de gaseras, aplicamos pautas estrictas del paradigma S.O.L.I.D. y patrón clásico MVVM (Model-View-ViewModel):
+
+*   `database/` 🗄️: Exclusivo de motores relacionales. Aloja scripts de Transact-SQL como `schema.sql` requeridos por DBA's para recrear servidores desde cero.
+*   `arduino/` 💾: Fragmentación de Firmware en `C++` en crudo embebido y libre al control periférico mediante loops.
+*   **`src/` (Workspace de C# WPF):**
+    *   `Models/`: Las plantillas inmutables (ej. `TankData.cs`). Contenedoras torpes y vacías preparadas teóricamente para ser inundadas de los atributos propios de un concepto (Limites, Niveles).
+    *   `Services/`: Puertas de aduana ajenas al contexto interfaz. Aquí el `SqlLoggerService` platica de tú con tu BD local sin distracciones y el `SerialService` traduce baudios y pulsos de la USB hacia el vocabulario numérico estándar. Suelen esconderse envueltas transparentemente por interfases abstractas (por ejemplo: `ISensorService`).
+    *   `Converters/`: Operadores lógicos visuales puros. Dicen: *"Si el número cae por debajo de 50%, tradúcelo mágicamente en una variable llamada 'Brushes.Orange', es decir pintura Naranja"*. 
+    *   `ViewModels/`: **El Cerebro C# (`MainViewModel.cs`)**. Amalgama todas las piezas anteriores. Importando servicios para que todo dialogue sin ensuciar la ventana. Implementa disparadores `PropertyChanged` para decirle dinámicamente a la capa de arriba *(Vista)* "¡Avisa que acabo de mover un estado!".
+    *   `Views/`: El escaparate cosmético (Como `MainWindow.xaml`). Declarado rígidamente solo mediante lenguajes XML que un artista plástico gráfico podría editar (Agregando sombritas, curvas o paneles de colores HTML). Dependen y confían pasiva y estrictamente vía reglas de "*Binding*" asíncrono pegado al respectivo y calculador ViewModel para moverse según el ritmo pautado.
+
+---
+
+## Diagramas de Arquitectura y UML (Modelo 4+1)
+
+A continuación, se describen los modelos técnicos de la solución estructurados basándonos en Mermaid.
 
 ### 1. Diagrama de Casos de Uso (Vista de Escenarios)
-*Resume las funcionalidades del sistema desde la perspectiva de los usuarios externos e internos. Se ilustra a un "Operador de Planta" como el encargado humano de definir parámetros limite, mientras el "Sensor de Nivel" y la "Bomba" actúan como agentes de origen sistémico de los cuales recibimos e instruimos información.*
+*Resume las funcionalidades del sistema desde la perspectiva de los usuarios externos e internos.*
 
 ```mermaid
 flowchart LR
@@ -52,7 +95,7 @@ flowchart LR
 ```
 
 ### 2. Diagrama de Secuencia (Vista Lógica)
-*Detalla el ciclo de vida de los datos a lo largo del tiempo. Cada iteración muestra cómo la lectura magnética/analógica del hardware es digitalizada mediante ADC, enviada a C# a través de serial, validada según el patrón MVVM y evaluada lógicamente. Dependiendo de los setpoints dictados por el usuario, emite tramas actuadoras y de forma asíncrona salva registros persistentes a bases de datos relacionales (Audit Trail).*
+*Detalla el ciclo de vida de los datos del sensor iterando cada 500 milisegundos.*
 
 ```mermaid
 sequenceDiagram
@@ -79,8 +122,8 @@ sequenceDiagram
     end
 ```
 
-### 3. Diagrama de Clases (Arquitectura MVVM)
-*Representa la estructura estática orientada a objetos usando S.O.L.I.D. Destaca la abstracción `ISensorService` que blinda el ViewModel para que las pruebas unitarias y el recambio de periféricos sean agnósticos. Incluye ahora la inyección teórica del `SqlLoggerService` para propósitos de respaldo.*
+### 3. Diagrama de Clases (Arquitectura Estrática MVVM)
+*Representa las referencias de las jerarquías asumiendo implementaciones y conectores concretos e Interfaces abstraídas dentro del proyecto.*
 
 ```mermaid
 classDiagram
@@ -141,21 +184,10 @@ classDiagram
 
 ---
 
-## Especificaciones de Hardware Actual (Sensor)
-
-Actualmente, el sistema utiliza un sensor estándar de contacto para comprobar la lectura analógica de porcentaje frente al problema simulado.
-
-- **Fabricante:** Tecneu (Número de parte/Modelo: BAQ75U2)
-- **ID Comercial:** ASIN B0BBQ7DTW6
-- **Dimensiones:** 36 mm x 9 mm x 10 mm
-- **Peso:** 20 g
-- **Alimentación:** Corriente Continua (CC), sin necesidad de baterías.
-- **Detalles físicos:** Color multicolor.
-
 ## Trabajos Futuros (Nice to Have) / Cosas por Hacer
 
-Para lograr que este proyecto transicione satisfactoriamente de un prototipo de escritorio o simulador funcional hacia un sistema de telemetría industrial de gas, deberíamos enfocar el hardware sumando los siguientes elementos:
+Para lograr que este proyecto transicione satisfactoriamente de un prototipo de simulación hacia una telemetría robusta presencial (Entornos GasLP):
 
-- [ ] **Sensor IMU (Acelerómetro XYZ y Giroscopio):** Acoplar dispositivos que evalúen la vibración estructural de motores y tuberías. En instrumentación, correlacionar la aceleración con las frecuencias de una bomba y sus tuberías permite evaluar su **estado de salud**, identificando si los rodamientos fallan o existe resonancia y comportamiento anómalo.
-- [ ] **Micrófono Ultrasónico:** Dispositivo de monitoreo de sonido en alta frecuencia diseñado específicamente para encontrar y aislar de manera anticipada posibles microfugas en bridas y tuberías de alimentación de gas.
-- [ ] **Medición No Invasiva mediante Efecto Hall:** Una medición invasiva (perforar/contacto) en un tanque de gas es peligrosa. La mayoría de estos tanques tienen un reloj/indicador flotante analógico, cuyo flotador interno asciende acoplado a un imán. La propuesta definitiva es usar un **sensor de Efecto Hall** fijo frente al cristal de este indicador. Así, se recoge la fluctuación de este campo magnético (asociada al ascenso del flotador) y el efecto se encarga de convertir de manera pasiva y segura la fuerza del imán en un diferencial de voltaje legible por el Arduino. Mismo resultado, con nulo riesgo de chispa.
+- [ ] **Sensor IMU (Acelerómetro XYZ y Giroscopio):** Medir aceleración para evaluar dinámicamente comportamientos atípicos en resonancias, desgaste y desbalance de tuberías (Mantenimiento Predictivo In-Situ).
+- [ ] **Micrófono Ultrasónico:** Dispositivo para el hallazgo precoz de fisuras a frecuencias en tuberías por encima de espectros audibles sin mermas invasivas de hardware.
+- [ ] **Sensor Pasivo (Efecto Hall):** Utilizado de forma magnética para convertir en C# las variaciones inofensivas de un indicador de aguja nativo de la carcasa. Esto para aislar chispa, asegurando lecturas en voltajes ADC completamente galvánicamente seguras.
