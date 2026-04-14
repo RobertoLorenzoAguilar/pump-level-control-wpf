@@ -1,6 +1,7 @@
 # Sistema de Monitoreo de Nivel y Control de Bomba (Telemetría de Hardware UI)
 
 ## 📖 Introducción y Guía de Despliegue (Getting Started)
+
 Si acabas de descargar o clonar este proyecto por primera vez y no sabes por dónde comenzar, sigue esta sencilla guía paso a paso para ejecutarlo en tu computadora:
 
 1. **Requisitos Previos:**
@@ -16,18 +17,19 @@ Si acabas de descargar o clonar este proyecto por primera vez y no sabes por dó
 ---
 
 ## 🛠️ Comportamiento del Sistema y Tolerancia a Fallos
-Como este software es de instrumentación, se cuidó una arquitectura de *Manejo Asentado de Excepciones*. Es decir, el software está consciente de que no siempre tendrás todos los aparatos del ecosistema conectados a tu laptop mientras desarrollas (o vas de viaje), pero NUNCA se asustará (crasheará) cerrándose súbitamente en la cara del operador. 
+
+Como este software es de instrumentación, se cuidó una arquitectura de *Manejo Asentado de Excepciones*. Es decir, el software está consciente de que no siempre tendrás todos los aparatos del ecosistema conectados a tu laptop mientras desarrollas (o vas de viaje), pero NUNCA se asustará (crasheará) cerrándose súbitamente en la cara del operador.
 
 Analicemos cómo funciona iterando en 4 de sus posibles escenarios:
 
-1. **Ejecución de "Solo Software" (Zero Hardware)**: 
+1. **Ejecución de "Solo Software" (Zero Hardware)**:
    - *Entorno:* Lanzaste WPF. Pero el cable del Arduino está lejos, y no compilaste localmente base de datos instalada.
    - *Comportamiento:* ¡WPF funcionará suavemente! Tu gráfica se quedará pausada al 0%. Ya que al fallar buscando puertos `COM3` o sentencias SQL, estos subsistemas generarán alarmas `catch` puramente silenciosas hacia la consola interna para que tú sepas el fallo pasivamente sin mermar la estabilidad interactiva de Windows.
 
 2. **Ejecución con Arduino Solamente**:
    - *Entorno:* Enchufaste tu Arduino leyendo datos por Serial, pero omitiste configurar o instalar el pesado servidor SQL Server.
    - *Comportamiento:* Podrás subir, brincar y observar reaccionar tus gráficas `ProgressBar` de humedad o nivel al instante. Al batir tus tolerancias, lanzarás con éxito directivas mecánicas hacia tus Relevadores (Actuadores). Los intentos paralelos de documentar el suceso al motor de bases de datos simplemente fallan a puerta cerrada. ¡La máquina responde bien al terreno a pesar de ser huérfana de logs temporales!
-   
+
 3. **Ejecución con Base de Datos Solamente**:
    - *Entorno:* Corriste tu archivo `schema.sql` configurando una base activa pero desanclaste la placa sensorial Arduino.
    - *Comportamiento:* Las métricas permanecerán paralíticas. Al no existir tramas magnéticas alimentando el bucle desde afuera, las condicionales estáticas no estallarán ningún ciclo. El sistema jamás emitirá registros ilusorios (`INSERT`) manteniéndonos blindados ante datos polinizados por la nada misma.
@@ -38,16 +40,17 @@ Analicemos cómo funciona iterando en 4 de sus posibles escenarios:
 ---
 
 ## 🗂️ Arquitectura de Componentes (El Árbol de Directorios)
+
 No se aplicó un simple *"Pon todas las reglas regadas adentro de Visual Basic"*. Para blindar la escalabilidad si crece el sistema de flotilla a decenas de gaseras, aplicamos pautas estrictas del paradigma S.O.L.I.D. y patrón clásico MVVM (Model-View-ViewModel):
 
-*   `database/` 🗄️: Exclusivo de motores relacionales. Aloja scripts de Transact-SQL como `schema.sql` requeridos por DBA's para recrear servidores desde cero.
-*   `arduino/` 💾: Fragmentación de Firmware en `C++` en crudo embebido y libre al control periférico mediante loops.
-*   **`src/` (Workspace de C# WPF):**
-    *   `Models/`: Las plantillas inmutables (ej. `TankData.cs`). Contenedoras torpes y vacías preparadas teóricamente para ser inundadas de los atributos propios de un concepto (Limites, Niveles).
-    *   `Services/`: Puertas de aduana ajenas al contexto interfaz. Aquí el `SqlLoggerService` platica de tú con tu BD local sin distracciones y el `SerialService` traduce baudios y pulsos de la USB hacia el vocabulario numérico estándar. Suelen esconderse envueltas transparentemente por interfases abstractas (por ejemplo: `ISensorService`).
-    *   `Converters/`: Operadores lógicos visuales puros. Dicen: *"Si el número cae por debajo de 50%, tradúcelo mágicamente en una variable llamada 'Brushes.Orange', es decir pintura Naranja"*. 
-    *   `ViewModels/`: **El Cerebro C# (`MainViewModel.cs`)**. Amalgama todas las piezas anteriores. Importando servicios para que todo dialogue sin ensuciar la ventana. Implementa disparadores `PropertyChanged` para decirle dinámicamente a la capa de arriba *(Vista)* "¡Avisa que acabo de mover un estado!".
-    *   `Views/`: El escaparate cosmético (Como `MainWindow.xaml`). Declarado rígidamente solo mediante lenguajes XML que un artista plástico gráfico podría editar (Agregando sombritas, curvas o paneles de colores HTML). Dependen y confían pasiva y estrictamente vía reglas de "*Binding*" asíncrono pegado al respectivo y calculador ViewModel para moverse según el ritmo pautado.
+- `database/` 🗄️: Exclusivo de motores relacionales. Aloja scripts de Transact-SQL como `schema.sql` requeridos por DBA's para recrear servidores desde cero.
+- `arduino/` 💾: Fragmentación de Firmware en `C++` en crudo embebido y libre al control periférico mediante loops.
+- **`src/` (Workspace de C# WPF):**
+  - `Models/`: Las plantillas inmutables (ej. `TankData.cs`). Contenedoras torpes y vacías preparadas teóricamente para ser inundadas de los atributos propios de un concepto (Limites, Niveles).
+  - `Services/`: Puertas de aduana ajenas al contexto interfaz. Aquí el `SqlLoggerService` platica de tú con tu BD local sin distracciones y el `SerialService` traduce baudios y pulsos de la USB hacia el vocabulario numérico estándar. Suelen esconderse envueltas transparentemente por interfases abstractas (por ejemplo: `ISensorService`).
+  - `Converters/`: Operadores lógicos visuales puros. Dicen: *"Si el número cae por debajo de 50%, tradúcelo mágicamente en una variable llamada 'Brushes.Orange', es decir pintura Naranja"*.
+  - `ViewModels/`: **El Cerebro C# (`MainViewModel.cs`)**. Amalgama todas las piezas anteriores. Importando servicios para que todo dialogue sin ensuciar la ventana. Implementa disparadores `PropertyChanged` para decirle dinámicamente a la capa de arriba *(Vista)* "¡Avisa que acabo de mover un estado!".
+  - `Views/`: El escaparate cosmético (Como `MainWindow.xaml`). Declarado rígidamente solo mediante lenguajes XML que un artista plástico gráfico podría editar (Agregando sombritas, curvas o paneles de colores HTML). Dependen y confían pasiva y estrictamente vía reglas de "*Binding*" asíncrono pegado al respectivo y calculador ViewModel para moverse según el ritmo pautado.
 
 ---
 
@@ -56,6 +59,7 @@ No se aplicó un simple *"Pon todas las reglas regadas adentro de Visual Basic"*
 A continuación, se describen los modelos técnicos de la solución estructurados basándonos en Mermaid.
 
 ### 1. Diagrama de Casos de Uso (Vista de Escenarios)
+
 *Resume las funcionalidades del sistema desde la perspectiva de los usuarios externos e internos.*
 
 ```mermaid
@@ -95,6 +99,7 @@ flowchart LR
 ```
 
 ### 2. Diagrama de Secuencia (Vista Lógica)
+
 *Detalla el ciclo de vida de los datos del sensor iterando cada 500 milisegundos.*
 
 ```mermaid
@@ -123,6 +128,7 @@ sequenceDiagram
 ```
 
 ### 3. Diagrama de Clases (Arquitectura Estrática MVVM)
+
 *Representa las referencias de las jerarquías asumiendo implementaciones y conectores concretos e Interfaces abstraídas dentro del proyecto.*
 
 ```mermaid
@@ -183,17 +189,18 @@ classDiagram
 ```
 
 ### 4. Diagrama de Conexiones Físicas (Cableado y Hardware)
+
 *Especificación electrónica validada para el levantamiento físico In-Situ integrando la señalización de bajo nivel.*
 
 **Hardware Base con Asignación de Pines (Pinout):**
+
 - **Sensor:** Tecneu BAQ75U2 (YL-69) ➔ Señal conectada al puerto Analógico **`A0`**.
 - **Actuador:** Módulo Relevador 1 Canal 5V 10A ➔ Señal conectada al puerto Digital **`D7`**.
 - **Controlador:** Arduino Uno R3.
 - **Bomba:** Mini Bomba Sumergible DC 3V - 5V.
 
 <p align="center">
-  <img src="img/módulo YL - 69.jpg" height="200" alt="Sensor YL-69" />
-  <img src="img/bomba 5v .png" height="200" alt="Bomba Sumergible 5V" />
+  <img src="img/módulo YL - 69.jpg" height="200" alt="Sensor YL-69" />  
   <img src="img/motor.png" height="200" alt="Motor" />
   <img src="img/módulo YL - 69 conexion arduino.png" height="200" alt="Esquema Conexión YL-69 a Arduino" />
 </p>
@@ -243,9 +250,10 @@ graph TD
 
 ## 🧪 Pruebas Manuales de Hardware (Monitor Serie)
 
-Si deseas probar que tu placa y tus componentes responden bien sin abrir la aplicación de C# WPF, puedes apoyarte del **Monitor Serie** incluido en el IDE de Arduino (configúralo a `9600 baudios`). 
+Si deseas probar que tu placa y tus componentes responden bien sin abrir la aplicación de C# WPF, puedes apoyarte del **Monitor Serie** incluido en el IDE de Arduino (configúralo a `9600 baudios`).
 
 **¿Qué deberías ver?**
+
 1. **Lecturas del Sensor:** Al abrir el puerto, empezarás a ver números bajando en cascada y de forma constante en la pantalla. Esos son los valores de humedad.
    - Si dejas el sensor en reposo **al aire libre**, el número leído debería estar **cerca de 1023**.
    - Si tocas las dos patas del sensor con tu **mano húmeda** o lo sumerges parcialmente en agua, el número de resistencia **bajará rápidamente** (generalmente arrojando valores entre 200 y 400 dependiendo de tu agua).
