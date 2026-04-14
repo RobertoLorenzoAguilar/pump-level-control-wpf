@@ -15,7 +15,7 @@ namespace PumpControl.Services
         // Evento definido en la interfaz
         public event EventHandler<double> DataReceived;
 
-        public SerialSensorService(string portName = "COM3", int baudRate = 9600)
+        public SerialSensorService(string portName = "COM12", int baudRate = 9600)
         {
             _portName = portName;
             _baudRate = baudRate;
@@ -28,6 +28,8 @@ namespace PumpControl.Services
             
             // Suscripción al evento de recepción de datos del hardware
             _serialPort.DataReceived += SerialPort_DataReceived;
+
+            string punto = "test";
         }
 
         public void Open()
@@ -56,8 +58,8 @@ namespace PumpControl.Services
                 
                 if (int.TryParse(rawData.Trim(), out int adcValue))
                 {
-                    // Convertimos ADC (0-1023) a Porcentaje (0-100)
-                    double percentage = (adcValue / 1023.0) * 100;
+                    // Invertimos la lógica matemática: 1023 (Seco) = 0%, 0 (Mojado) = 100%
+                    double percentage = 100.0 - ((adcValue / 1023.0) * 100.0);
                     
                     // Almacenamos internamente el nivel más reciente detectado
                     _lastLevel = Math.Round(percentage, 2);
@@ -68,6 +70,21 @@ namespace PumpControl.Services
             }
             catch (Exception ex) {
                 Debug.WriteLine($"Error en lectura: {ex.Message}");
+            }
+        }
+
+        public void SendCommand(string command)
+        {
+            try
+            {
+                if (_serialPort != null && _serialPort.IsOpen)
+                {
+                    _serialPort.Write(command);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error al enviar comando: {ex.Message}");
             }
         }
 

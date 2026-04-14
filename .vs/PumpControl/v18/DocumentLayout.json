@@ -1,12 +1,37 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\project\\pump-level-control-wpf\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3525D9B0-D9F4-44DC-9EFE-32C9BCD06575}|PumpControl.csproj|c:\\project\\pump-level-control-wpf\\src\\services\\serialservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3525D9B0-D9F4-44DC-9EFE-32C9BCD06575}|PumpControl.csproj|solutionrelative:src\\services\\serialservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SerialService.cs",
+              "DocumentMoniker": "C:\\project\\pump-level-control-wpf\\src\\Services\\SerialService.cs",
+              "RelativeDocumentMoniker": "src\\Services\\SerialService.cs",
+              "ToolTip": "C:\\project\\pump-level-control-wpf\\src\\Services\\SerialService.cs",
+              "RelativeToolTip": "src\\Services\\SerialService.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAgwEAAAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T16:24:01.318Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

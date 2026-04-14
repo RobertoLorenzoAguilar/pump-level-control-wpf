@@ -36,6 +36,21 @@
                            FontWeight="Bold" Margin="5,0,0,0"/>
             </StackPanel>
 
+            <!-- Panel de Control Manual -->
+            <StackPanel Margin="0,5,0,15" HorizontalAlignment="Center">
+                <CheckBox Content="Habilitar Modo Manual" IsChecked="{Binding IsManualMode}" 
+                          FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                
+                <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsManualMode}">
+                    <Button Content="Activar (1)" Command="{Binding ForceOnCommand}" 
+                            Width="80" Margin="0,0,10,0" Padding="5" 
+                            Background="#D4EDDA" BorderBrush="#28A745" Cursor="Hand"/>
+                    <Button Content="Apagar (0)" Command="{Binding ForceOffCommand}" 
+                            Width="80" Padding="5" 
+                            Background="#F8D7DA" BorderBrush="#DC3545" Cursor="Hand"/>
+                </StackPanel>
+            </StackPanel>
+
             <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5"
                     Background="{Binding PumpStatus, Converter={StaticResource StatusToColorConverter}}">
                 <TextBlock Text="{Binding PumpStatus}" 

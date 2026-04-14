@@ -9,5 +9,8 @@ namespace PumpControl.Services
         
         // Define un evento para avisar a la UI cuando cambie el dato
         event EventHandler<double> DataReceived;
+
+        // Propaga una orden de control de regreso al hardware
+        void SendCommand(string command);
     }
 }

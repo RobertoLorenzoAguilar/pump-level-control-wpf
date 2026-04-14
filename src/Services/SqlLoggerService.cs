@@ -11,29 +11,33 @@ namespace PumpControl.Services
 
         public void LogEvent(string type, string desc, double level)
         {
-            try
+            // Ejecutar en un hilo en segundo plano (Fire and Forget)
+            // de esta manera, si la base de datos se tarda 15 segundos en responder
+            // (o en fallar porque no está instalada), el WPF jamás se quedará trabado.
+            System.Threading.Tasks.Task.Run(() =>
             {
-                using (SqlConnection conn = new SqlConnection(_connectionString))
+                try
                 {
-                    string query = "INSERT INTO EventLog (EventType, Description, CurrentLevel) VALUES (@type, @desc, @level)";
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    
-                    // Asegurarse de prevenir SQL Injection con parámetros
-                    cmd.Parameters.AddWithValue("@type", type);
-                    cmd.Parameters.AddWithValue("@desc", desc);
-                    cmd.Parameters.AddWithValue("@level", level);
+                    using (SqlConnection conn = new SqlConnection(_connectionString))
+                    {
+                        string query = "INSERT INTO EventLog (EventType, Description, CurrentLevel) VALUES (@type, @desc, @level)";
+                        SqlCommand cmd = new SqlCommand(query, conn);
+                        
+                        cmd.Parameters.AddWithValue("@type", type);
+                        cmd.Parameters.AddWithValue("@desc", desc);
+                        cmd.Parameters.AddWithValue("@level", level);
 
-                    conn.Open();
-                    cmd.ExecuteNonQuery();
-                    
-                    Debug.WriteLine($"[BD LOG] {type}: {desc}");
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        
+                        Debug.WriteLine($"[BD LOG] {type}: {desc}");
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                // Para el MVP y no detener la aplicación asumiendo que la BD podría no existir aún en Local
-                Debug.WriteLine($"Error al escribir en bitácora SQL: {ex.Message}");
-            }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error al escribir en bitácora SQL: {ex.Message}");
+                }
+            });
         }
     }
 }
