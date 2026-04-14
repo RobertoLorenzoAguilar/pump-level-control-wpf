@@ -9,6 +9,8 @@ namespace PumpControl.Services
         private SerialPort _serialPort;
         private readonly string _portName;
         private readonly int _baudRate;
+        
+        private double _lastLevel = 0.0;
 
         // Evento definido en la interfaz
         public event EventHandler<double> DataReceived;
@@ -37,6 +39,13 @@ namespace PumpControl.Services
                 Debug.WriteLine($"Error abriendo puerto: {ex.Message}");
             }
         }
+        
+        // --- MÉTODO AGREGADO ---
+        // Implementación requerida por el contrato de la interfaz ISensorService
+        public double GetCurrentLevel()
+        {
+            return _lastLevel;
+        }
 
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
@@ -49,9 +58,12 @@ namespace PumpControl.Services
                 {
                     // Convertimos ADC (0-1023) a Porcentaje (0-100)
                     double percentage = (adcValue / 1023.0) * 100;
+                    
+                    // Almacenamos internamente el nivel más reciente detectado
+                    _lastLevel = Math.Round(percentage, 2);
 
                     // Disparamos el evento para que el ViewModel se entere
-                    DataReceived?.Invoke(this, Math.Round(percentage, 2));
+                    DataReceived?.Invoke(this, _lastLevel);
                 }
             }
             catch (Exception ex) {

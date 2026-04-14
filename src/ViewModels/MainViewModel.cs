@@ -1,86 +1,71 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using PumpControl.Services;
+using System.Windows.Threading;
 
 namespace PumpControl.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        private readonly ISensorService _sensorService;
-        private readonly SqlLoggerService _logger;
         private double _currentLevel;
-        private double _threshold = 50.0; // Valor por defecto: 50%
-        private string _pumpStatus = "Apagada";
-        private string _lastStatus = "INIT";
+        private double _threshold;
+        private string _pumpStatus;
 
-        // Propiedad que la interfaz (XAML) va a "escuchar"
         public double CurrentLevel
         {
             get => _currentLevel;
-            set { _currentLevel = value; OnPropertyChanged(); CheckPumpLogic(); }
+            set
+            {
+                _currentLevel = value;
+                OnPropertyChanged();
+                UpdateStatus();
+            }
         }
 
         public double Threshold
         {
             get => _threshold;
-            set { _threshold = value; OnPropertyChanged(); }
+            set
+            {
+                _threshold = value;
+                OnPropertyChanged();
+                UpdateStatus();
+            }
         }
 
         public string PumpStatus
         {
             get => _pumpStatus;
-            set { _pumpStatus = value; OnPropertyChanged(); }
+            set
+            {
+                _pumpStatus = value;
+                OnPropertyChanged();
+            }
         }
 
-        public MainViewModel(ISensorService sensorService, SqlLoggerService logger = null)
+        public MainViewModel()
         {
-            _sensorService = sensorService;
-            _logger = logger ?? new SqlLoggerService(); // Por defecto lo creamos si no se inyecta
-            
-            // Nos suscribimos al evento del servicio
-            _sensorService.DataReceived += (s, level) => 
+            Threshold = 50;
+
+            // Simulación de nivel dinámico
+            var timer = new DispatcherTimer();
+            timer.Interval = System.TimeSpan.FromSeconds(1);
+            timer.Tick += (s, e) =>
             {
-                // Importante: Actualizamos el nivel (WPF se encarga del resto)
-                CurrentLevel = level;
+                CurrentLevel = (CurrentLevel + 5) % 100;
             };
+            timer.Start();
         }
 
-        private void CheckPumpLogic()
+        private void UpdateStatus()
         {
-            if (CurrentLevel < Threshold)
-            {
-                PumpStatus = "ENCENDIDA (Llenando...)";
-                
-                if (_lastStatus != "ON")
-                {
-                    _logger.LogEvent("ALERTA", "Bomba Activada por nivel bajo debajo del umbral.", CurrentLevel);
-                    _lastStatus = "ON";
-                }
-                // Aquí podrías llamar a un método en el servicio para enviar "ON" al Arduino
-            }
-            else
-            {
-                PumpStatus = "Apagada (Nivel OK)";
-                
-                if (_lastStatus != "OFF" && _lastStatus != "INIT")
-                {
-                    _logger.LogEvent("INFO", "Nivel recuperado. Bomba Desactivada.", CurrentLevel);
-                    _lastStatus = "OFF";
-                }
-                else if (_lastStatus == "INIT")
-                {
-                    _lastStatus = "OFF";
-                }
-                // Aquí enviarías "OFF" al Arduino
-            }
+            PumpStatus = CurrentLevel >= Threshold ? "ACTIVA" : "INACTIVA";
         }
 
-        #region INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
+
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-        #endregion
     }
 }
