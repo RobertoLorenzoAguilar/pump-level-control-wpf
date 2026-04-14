@@ -16,30 +16,39 @@ A continuación, se describen los modelos técnicos de la solución orientados a
 *Resume las funcionalidades del sistema desde la perspectiva de los usuarios externos e internos. Se ilustra a un "Operador de Planta" como el encargado humano de definir parámetros limite, mientras el "Sensor de Nivel" y la "Bomba" actúan como agentes de origen sistémico de los cuales recibimos e instruimos información.*
 
 ```mermaid
-graph LR
-    %% Definición de Actores con formas distintas
-    Admin[Operador de Planta]
+flowchart LR
+    %% Actores 
+    Admin((Operador de Planta))
     Sensor((Sensor de Nivel/ADC))
-    Actuador[[Bomba de Agua]]
+    Actuador((Bomba de Agua))
 
-    subgraph "Sistema de Control (C# .NET)"
-        UC1(Visualizar Nivel en Tiempo Real)
-        UC2(Configurar Umbrales)
-        UC3(Recibir Datos Serial/ADC)
-        UC4(Procesar Lógica de Control)
-        UC5(Comando Activar/Desactivar)
+    %% Sistema (Rectángulo Envolvente)
+    subgraph Sistema_de_Control ["Sistema de Control (C# .NET)"]
+        direction TB
+        UC1([Visualizar Nivel en Tiempo Real])
+        UC2([Configurar Umbrales])
+        UC3([Recibir Datos Serial/ADC])
+        UC4([Procesar Lógica de Control])
+        UC5([Comando Activar/Desactivar])
         
         %% Relaciones internas
-        UC3 --> UC4
+        UC3 -.->|include| UC4
         UC4 -.->|include| UC5
         UC4 --- UC1
     end
 
-    %% Conexiones con Actores
+    %% Conexiones Clásicas
     Admin --- UC1
     Admin --- UC2
     Sensor --- UC3
     UC5 --- Actuador
+
+    %% Forzando la Apariencia UML mediante Clases de Color
+    classDef actor fill:#F4F4F4,stroke:#333,stroke-width:1.5px,color:#000;
+    classDef usecase fill:#D1E8FF,stroke:#1A5276,stroke-width:1.5px,color:#000;
+    
+    class Admin,Sensor,Actuador actor;
+    class UC1,UC2,UC3,UC4,UC5 usecase;
 ```
 
 ### 2. Diagrama de Secuencia (Vista Lógica)
