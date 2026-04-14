@@ -182,6 +182,62 @@ classDiagram
     MainWindow --> MainViewModel : DataContext (Binding)
 ```
 
+### 4. Diagrama de Conexiones Físicas (Cableado y Hardware)
+*Especificación electrónica validada para el levantamiento físico In-Situ integrando la señalización de bajo nivel.*
+
+**Hardware Base con Asignación de Pines (Pinout):**
+- **Sensor:** Tecneu BAQ75U2 (YL-69) ➔ Señal conectada al puerto Analógico **`A0`**.
+- **Actuador:** Módulo Relevador 1 Canal 5V 10A ➔ Señal conectada al puerto Digital **`D7`**.
+- **Controlador:** Arduino Uno R3.
+- **Bomba:** Mini Bomba Sumergible DC 3V - 5V.
+
+<p align="center">
+  <img src="img/módulo YL - 69.jpg" height="200" alt="Sensor YL-69" />
+  <img src="img/bomba 5v .png" height="200" alt="Bomba Sumergible 5V" />
+  <img src="img/módulo YL - 69 conexion arduino.png" height="200" alt="Esquema Conexión YL-69 a Arduino" />
+</p>
+
+```mermaid
+graph TD
+    %% Nodos principales
+    Ar[Arduino Uno]
+    Sen[Sensor Humedad Tierra YL-69\nTecneu BAQ75U2]
+    Rel[Módulo Relevador 1 Canal\nLow Level Trigger 5V]
+    Pum[Mini Bomba Sumergible DC 3V-5V]
+    Pow[Fuente de Poder Modulo USB / Batería]
+
+    %% Cableado del Sensor Tecneu
+    Sen -- Pin VCC ---|Cable 5V (Energía)| Ar
+    Sen -- Pin GND ---|Cable GND (Tierra)| Ar
+    Sen -- Pin D0 ---|No se conecta| x1[Libre]
+    Sen -- Pin A0 ---|Cable Analógico a Puerto 'A0'| Ar
+
+    %% Cableado del Relevador (Baja Potencia)
+    Rel -- Pin VCC / DC+ ---|Cable 5V (Energía)| Ar
+    Rel -- Pin GND / DC- ---|Cable GND (Tierra)| Ar
+    Rel -- Pin IN / Señal ---|Cable Digital a Puerto 'D7'| Ar
+
+    %% Conexiones de Fuerza (Bomba y Relevador)
+    Pow -- Polo Positivo `+` ---|Entrada COMÚN 'COM'| Rel
+    Rel -- Normalmente Abierto 'NO' ---|Cable Positivo `+` de Bomba| Pum
+    Pow -- Polo Negativo `-` ---|Cable Negativo `-` de Bomba| Pum
+
+    %% Clases CSS Personalizadas
+    classDef arduino fill:#00979C,stroke:#006468,stroke-width:2px,color:#fff;
+    classDef power fill:#FF4B4B,stroke:#8B0000,stroke-width:2px,color:#fff;
+    classDef sensor fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff;
+    classDef relay fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    classDef water fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    classDef empty fill:#e0e0e0,stroke:#999,color:#666;
+
+    class Ar arduino;
+    class Pow power;
+    class Sen sensor;
+    class Rel relay;
+    class Pum water;
+    class x1 empty;
+```
+
 ---
 
 ## Trabajos Futuros (Nice to Have) / Cosas por Hacer
