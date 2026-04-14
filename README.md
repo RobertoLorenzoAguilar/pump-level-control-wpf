@@ -207,20 +207,20 @@ graph TD
     Pow[Fuente de Poder Modulo USB / Batería]
 
     %% Cableado del Sensor Tecneu
-    Sen -- Pin VCC ---|Cable 5V (Energía)| Ar
-    Sen -- Pin GND ---|Cable GND (Tierra)| Ar
-    Sen -- Pin D0 ---|No se conecta| x1[Libre]
-    Sen -- Pin A0 ---|Cable Analógico a Puerto 'A0'| Ar
+    Sen -- "Pin VCC - Cable 5V (Energía)" --- Ar
+    Sen -- "Pin GND - Cable GND (Tierra)" --- Ar
+    Sen -- "Pin D0 - No se conecta" --- x1[Libre]
+    Sen -- "Pin A0 - Cable Analógico a Puerto 'A0'" --- Ar
 
     %% Cableado del Relevador (Baja Potencia)
-    Rel -- Pin VCC / DC+ ---|Cable 5V (Energía)| Ar
-    Rel -- Pin GND / DC- ---|Cable GND (Tierra)| Ar
-    Rel -- Pin IN / Señal ---|Cable Digital a Puerto 'D7'| Ar
+    Rel -- "Pin VCC / DC+ - Cable 5V (Energía)" --- Ar
+    Rel -- "Pin GND / DC- - Cable GND (Tierra)" --- Ar
+    Rel -- "Pin IN / Señal - Cable Digital a Puerto 'D7'" --- Ar
 
     %% Conexiones de Fuerza (Bomba y Relevador)
-    Pow -- Polo Positivo `+` ---|Entrada COMÚN 'COM'| Rel
-    Rel -- Normalmente Abierto 'NO' ---|Cable Positivo `+` de Bomba| Pum
-    Pow -- Polo Negativo `-` ---|Cable Negativo `-` de Bomba| Pum
+    Pow -- "Polo Positivo '+' - Entrada COMÚN 'COM'" --- Rel
+    Rel -- "Normalmente Abierto 'NO' - Cable Positivo '+' de Bomba" --- Pum
+    Pow -- "Polo Negativo '-' - Cable Negativo '-' de Bomba" --- Pum
 
     %% Clases CSS Personalizadas
     classDef arduino fill:#00979C,stroke:#006468,stroke-width:2px,color:#fff;
