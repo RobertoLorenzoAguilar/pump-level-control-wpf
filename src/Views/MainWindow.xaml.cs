@@ -10,5 +10,10 @@ namespace PumpControl.Views
             InitializeComponent();
             DataContext = new MainViewModel();
         }
+
+        private void TextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+
+        }
     }
 }

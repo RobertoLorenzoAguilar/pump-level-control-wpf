@@ -1,7 +1,9 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using PumpControl.Services;
+
 
 namespace PumpControl.ViewModels
 {
@@ -9,6 +11,11 @@ namespace PumpControl.ViewModels
     {
         private ISensorService _sensorService;
         private SqlLoggerService _logger;
+
+        // ─── CALIBRACIÓN FÍSICA ───────────────────────────────────────────────────
+        // El sensor YL-69 alcanza saturación física a este % del rango ADC.
+        // Por encima de este valor, el tanque se considera lleno al 100%.
+        private const double MaxPhysicalLevel = 5.0;
 
         private double _currentLevel;
         private double _threshold;
@@ -21,9 +28,19 @@ namespace PumpControl.ViewModels
             {
                 _currentLevel = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(DisplayLevel));
+                OnPropertyChanged(nameof(FillStatusText));
                 UpdateStatus();
             }
         }
+
+        /// <summary>
+        /// Nivel escalado para visualización: mapea el rango físico real (0–MaxPhysicalLevel %)
+        /// al rango de pantalla completo (0–100 %). Es lo que ve el operador en la UI.
+        /// Ej: sensor al 5 % raw → DisplayLevel = 100 % (tanque lleno).
+        /// </summary>
+        public double DisplayLevel
+            => Math.Min(100.0, Math.Round((_currentLevel / MaxPhysicalLevel) * 100.0, 1));
 
         public double Threshold
         {
@@ -33,6 +50,25 @@ namespace PumpControl.ViewModels
                 _threshold = value;
                 OnPropertyChanged();
                 UpdateStatus();
+            }
+        }
+
+        /// <summary>
+        /// Texto descriptivo del estado de llenado. Trabaja sobre DisplayLevel (escala 0–100 %).
+        /// </summary>
+        public string FillStatusText
+        {
+            get
+            {
+                double dl        = DisplayLevel;
+                double remaining = Math.Round(100.0 - dl, 1);
+                if (dl >= 98.0)
+                    return "\u2705 Nivel m\u00e1ximo alcanzado \u2014 Bomba apagada";
+                if (dl >= 70.0)
+                    return $"\u25b2 Nivel elevado \u2014 Falta {remaining:F1}\u202f% para llenarse";
+                if (dl >= 30.0)
+                    return $"\u26a0 Nivel medio \u2014 Falta {remaining:F1}\u202f% para llenarse";
+                return $"\ud83d\udd34 NIVEL CR\u00cdTICO \u2014 Falta {remaining:F1}\u202f% para llenarse";
             }
         }
 
@@ -64,7 +100,7 @@ namespace PumpControl.ViewModels
 
         public MainViewModel()
         {
-            Threshold = 50;
+            Threshold = 80;  // 80 % de DisplayLevel = punto de corte operativo
             _logger = new SqlLoggerService();
 
             // Comandos manuales
@@ -104,22 +140,26 @@ namespace PumpControl.ViewModels
 
         private void UpdateStatus()
         {
-            if (IsManualMode) return; // Si estamos en manual, no aplicar reglas automáticas.
+            if (IsManualMode) return; // En manual, las reglas automáticas no aplican.
 
-            bool isTriggered = CurrentLevel >= Threshold;
+            // Comparar contra DisplayLevel (escala 0-100 %) para que el Threshold
+            // del slider coincida con lo que ve el operador en pantalla.
+            bool isTriggered = DisplayLevel >= Threshold;
             string newStatus = isTriggered ? "ACTIVA" : "INACTIVA";
-            
-            // ¡Evita atascar (trabar) el hilo comprobando si ya estábamos en este mismo estado!
+
+            // Evita rearmar el estado si ya estamos en el mismo
             if (PumpStatus == newStatus) return;
-            
+
             PumpStatus = newStatus;
             string hwCommand = isTriggered ? "1" : "0";
-            
+
             _sensorService?.SendCommand(hwCommand);
-            
-            // Intentará grabar en la BD. Si no existe, The task envolverá la caída en silencio.
-            _logger?.LogEvent(isTriggered ? "PUMP_ON" : "PUMP_OFF", 
-                $"Nivel cruzó la línea marcando {CurrentLevel}% (Umbral: {Threshold}%)", CurrentLevel);
+
+            // Log con nivel crudo (valor de ingeniería) y nivel normalizado para auditoría completa
+            _logger?.LogEvent(
+                isTriggered ? "PUMP_ON" : "PUMP_OFF",
+                $"DisplayLevel={DisplayLevel:F1}% (raw={CurrentLevel:F2}%) cruzó umbral {Threshold}%",
+                DisplayLevel);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

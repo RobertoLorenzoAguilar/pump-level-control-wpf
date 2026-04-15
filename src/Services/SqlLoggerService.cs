@@ -7,7 +7,7 @@ namespace PumpControl.Services
     public class SqlLoggerService
     {
         // En un entorno de producción, esto vendría de un archivo appsettings.json o variable de entorno
-        private readonly string _connectionString = "Server=localhost\\SQLEXPRESS;Database=PumpDB;Trusted_Connection=True;";
+        private readonly string _connectionString = "Server=192.168.1.50;Database=PumpDB;User Id=sa;Password=Brdk4@Bug7635S";
 
         public void LogEvent(string type, string desc, double level)
         {

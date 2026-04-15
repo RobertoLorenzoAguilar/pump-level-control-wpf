@@ -11,17 +11,19 @@ namespace PumpControl.Converters
         {
             if (value is string status)
             {
-                // De acuerdo a MainViewModel.cs: "ENCENDIDA (Llenando...)" y "Apagada (Nivel OK)"
-                if (status.Contains("ENCENDIDA", StringComparison.OrdinalIgnoreCase))
+                // Verificar INACTIVA primero porque "ACTIVA" es substring de "INACTIVA"
+                if (status.Contains("INACTIVA", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Brushes.LightGreen;
+                    // Azul oscuro apagado — bomba detenida
+                    return new SolidColorBrush(Color.FromRgb(30, 41, 59));
                 }
-                if (status.Contains("Apagada", StringComparison.OrdinalIgnoreCase))
+                if (status.Contains("ACTIVA", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Brushes.LightGray;
+                    // Verde oscuro esmeralda — bomba en operación
+                    return new SolidColorBrush(Color.FromRgb(6, 78, 59));
                 }
             }
-            return Brushes.Transparent;
+            return new SolidColorBrush(Color.FromRgb(31, 41, 55));
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -30,3 +32,4 @@ namespace PumpControl.Converters
         }
     }
 }
+
