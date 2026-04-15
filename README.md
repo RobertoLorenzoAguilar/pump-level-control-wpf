@@ -54,7 +54,44 @@ No se aplicó un simple *"Pon todas las reglas regadas adentro de Visual Basic"*
 
 ---
 
+## 📸 Implementación en Funcionamiento
+
+Las siguientes capturas muestran el sistema operando en un escenario de **Producción Operativa Completa**: Arduino conectado, sensor sumergido, bomba respondiendo y SQL Server registrando cada evento.
+
+---
+
+### 🖥️ Interfaz Gráfica (Panel de Instrumentos WPF)
+
+Panel de control ejecutándose en modo oscuro industrial. La barra de nivel muestra el porcentaje de llenado normalizado (`DisplayLevel`), el texto de estado cambia en tiempo real según el umbral configurado, y los botones de control manual permiten operar la bomba directamente desde la UI.
+
+<p align="center">
+  <img src="img/interfaz grafica imagen.png" width="420" alt="Interfaz gráfica WPF — Monitor Gas L.P." />
+</p>
+
+---
+
+### 🔌 Integración de Hardware Físico
+
+Vista real del banco de pruebas: Arduino Uno + sensor YL-69 sumergido en el recipiente de agua, módulo relevador controlando la mini bomba sumergible, y el software WPF reflejando la lectura en tiempo real desde el puerto serial `COM12`.
+
+<p align="center">
+  <img src="img/integracion hardaware fisico.jpeg" width="560" alt="Banco de pruebas — Arduino, sensor, relevador y bomba integrados" />
+</p>
+
+---
+
+### 🗄️ Registro de Eventos en SQL Server (`EventLog`)
+
+Bitácora histórica generada automáticamente por `SqlLoggerService`. Cada transición de la bomba (`PUMP_ON` / `PUMP_OFF`) queda registrada con su timestamp, descripción, nivel normalizado (`DisplayLevel`) y valor crudo del ADC para auditoría de ingeniería.
+
+<p align="center">
+  <img src="img/sql_logs_events.png" width="700" alt="Tabla EventLog en SQL Server Management Studio" />
+</p>
+
+---
+
 ## Diagramas de Arquitectura y UML (Modelo 4+1)
+
 
 A continuación, se describen los modelos técnicos de la solución estructurados basándonos en Mermaid.
 
